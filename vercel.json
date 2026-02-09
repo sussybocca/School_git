@@ -43,6 +43,27 @@
       "source": "/github",
       "destination": "https://github.com/login/oauth/authorize",
       "permanent": false
+    },
+    {
+      "source": "/login.html",
+      "destination": "/login",
+      "permanent": true
+    },
+    {
+      "source": "/dashboard.html",
+      "destination": "/dashboard",
+      "permanent": true
+    },
+    {
+      "source": "/auth-callback.html",
+      "destination": "/auth-callback",
+      "permanent": true
+    },
+    {
+      "source": "/index.html",
+      "destination": "/",
+      "permanent": true
     }
-  ]
+  ],
+  "cleanUrls": false
 }
