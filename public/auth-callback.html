@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Connecting GitHub - School_git</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #6e48aa;
+            --primary-dark: #5a3990;
+            --secondary: #9d50bb;
+            --light: #f8f9fa;
+            --dark: #2c3e50;
+            --gray: #6c757d;
+            --success: #28a745;
+            --danger: #dc3545;
+            --warning: #ffc107;
+            --info: #17a2b8;
+            --shadow: 0 4px 6px rgba(0,0,0,0.1);
+            --shadow-lg: 0 10px 25px rgba(0,0,0,0.15);
+            --radius: 12px;
+            --transition: all 0.3s ease;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 500px;
+        }
+
+        .logo {
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+            margin-bottom: 2rem;
+        }
+
+        .logo-icon {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(45deg, var(--primary), var(--secondary));
+            border-radius: var(--radius);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.8rem;
+            font-weight: bold;
+            box-shadow: var(--shadow);
+        }
+
+        .logo-text {
+            font-size: 2rem;
+            font-weight: 700;
+            color: white;
+        }
+
+        .auth-card {
+            background: white;
+            border-radius: var(--radius);
+            padding: 2.5rem;
+            box-shadow: var(--shadow-lg);
+            text-align: center;
+        }
+
+        .status-icon {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1.5rem;
+            font-size: 2.5rem;
+        }
+
+        .status-icon.success {
+            background: rgba(40, 167, 69, 0.1);
+            color: var(--success);
+            border: 3px solid var(--success);
+        }
+
+        .status-icon.error {
+            background: rgba(220, 53, 69, 0.1);
+            color: var(--danger);
+            border: 3px solid var(--danger);
+        }
+
+        .status-icon.loading {
+            background: rgba(23, 162, 184, 0.1);
+            color: var(--info);
+            border: 3px solid var(--info);
+        }
+
+        .status-title {
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            color: var(--dark);
+        }
+
+        .status-message {
+            color: var(--gray);
+            font-size: 1.1rem;
+            line-height: 1.6;
+            margin-bottom: 2rem;
+        }
+
+        .github-info {
+            background: var(--light);
+            border-radius: var(--radius);
+            padding: 1.5rem;
+            margin: 2rem 0;
+            text-align: left;
+        }
+
+        .github-username {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: var(--dark);
+        }
+
+        .github-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--dark);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.2rem;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            padding: 1rem 2rem;
+            font-size: 1rem;
+            font-weight: 600;
+            border-radius: var(--radius);
+            border: none;
+            cursor: pointer;
+            transition: var(--transition);
+            text-decoration: none;
+            width: 100%;
+            margin-top: 1rem;
+        }
+
+        .btn-primary {
+            background: linear-gradient(45deg, var(--primary), var(--secondary));
+            color: white;
+            box-shadow: var(--shadow);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .btn-secondary {
+            background: var(--light);
+            color: var(--dark);
+            border: 1px solid var(--gray-light);
+        }
+
+        .btn-secondary:hover {
+            background: #e9ecef;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid rgba(110, 72, 170, 0.2);
+            border-radius: 50%;
+            border-top-color: var(--primary);
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .progress-bar {
+            height: 6px;
+            background: var(--gray-light);
+            border-radius: 3px;
+            margin: 2rem 0;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(45deg, var(--primary), var(--secondary));
+            width: 0%;
+            transition: width 0.3s ease;
+            border-radius: 3px;
+        }
+
+        .error-details {
+            background: rgba(220, 53, 69, 0.1);
+            border: 1px solid rgba(220, 53, 69, 0.2);
+            border-radius: var(--radius);
+            padding: 1rem;
+            margin: 1rem 0;
+            text-align: left;
+            display: none;
+        }
+
+        .error-details.show {
+            display: block;
+        }
+
+        .error-title {
+            font-weight: 600;
+            color: var(--danger);
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+        }
+
+        .error-message {
+            color: var(--danger);
+            font-size: 0.85rem;
+            font-family: monospace;
+        }
+
+        .toggle-error {
+            background: none;
+            border: none;
+            color: var(--gray);
+            font-size: 0.9rem;
+            cursor: pointer;
+            margin-top: 0.5rem;
+        }
+
+        .toggle-error:hover {
+            color: var(--dark);
+        }
+
+        @media (max-width: 768px) {
+            .auth-card {
+                padding: 2rem;
+            }
+            
+            .status-title {
+                font-size: 1.5rem;
+            }
+            
+            .logo-text {
+                font-size: 1.8rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="/" class="logo">
+            <div class="logo-icon">
+                <i class="fas fa-graduation-cap"></i>
+            </div>
+            <span class="logo-text">School_git</span>
+        </a>
+        
+        <div class="auth-card">
+            <!-- Loading State -->
+            <div id="loadingState">
+                <div class="status-icon loading">
+                    <i class="fas fa-sync fa-spin"></i>
+                </div>
+                <h2 class="status-title">Connecting to GitHub</h2>
+                <p class="status-message" id="statusMessage">
+                    Processing GitHub authorization...
+                </p>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill"></div>
+                </div>
+                <div class="spinner"></div>
+            </div>
+            
+            <!-- Success State -->
+            <div id="successState" style="display: none;">
+                <div class="status-icon success">
+                    <i class="fas fa-check"></i>
+                </div>
+                <h2 class="status-title">GitHub Connected!</h2>
+                <p class="status-message" id="successMessage">
+                    Your GitHub account has been successfully connected.
+                </p>
+                <div class="github-info" id="githubInfo">
+                    <div class="github-username">
+                        <div class="github-avatar" id="githubAvatar">
+                            <i class="fab fa-github"></i>
+                        </div>
+                        <span id="githubUsername">Loading...</span>
+                    </div>
+                    <p style="color: var(--gray); font-size: 0.9rem; margin-top: 0.5rem;">
+                        You can now create real GitHub repositories through School_git.
+                    </p>
+                </div>
+                <button class="btn btn-primary" id="continueBtn">
+                    <i class="fas fa-arrow-right"></i>
+                    Continue to Dashboard
+                </button>
+            </div>
+            
+            <!-- Error State -->
+            <div id="errorState" style="display: none;">
+                <div class="status-icon error">
+                    <i class="fas fa-exclamation"></i>
+                </div>
+                <h2 class="status-title">Connection Failed</h2>
+                <p class="status-message" id="errorMessage">
+                    Unable to connect to GitHub. Please try again.
+                </p>
+                <div class="error-details" id="errorDetails">
+                    <div class="error-title">Error Details:</div>
+                    <div class="error-message" id="errorDetailsText"></div>
+                </div>
+                <button class="toggle-error" id="toggleErrorBtn">
+                    Show Error Details
+                </button>
+                <button class="btn btn-primary" id="retryBtn">
+                    <i class="fas fa-redo"></i>
+                    Try Again
+                </button>
+                <button class="btn btn-secondary" id="backToLoginBtn">
+                    <i class="fas fa-arrow-left"></i>
+                    Back to Login
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // DOM Elements
+        const loadingState = document.getElementById('loadingState');
+        const successState = document.getElementById('successState');
+        const errorState = document.getElementById('errorState');
+        const statusMessage = document.getElementById('statusMessage');
+        const progressFill = document.getElementById('progressFill');
+        const successMessage = document.getElementById('successMessage');
+        const githubUsername = document.getElementById('githubUsername');
+        const githubAvatar = document.getElementById('githubAvatar');
+        const githubInfo = document.getElementById('githubInfo');
+        const continueBtn = document.getElementById('continueBtn');
+        const errorMessage = document.getElementById('errorMessage');
+        const errorDetails = document.getElementById('errorDetails');
+        const errorDetailsText = document.getElementById('errorDetailsText');
+        const toggleErrorBtn = document.getElementById('toggleErrorBtn');
+        const retryBtn = document.getElementById('retryBtn');
+        const backToLoginBtn = document.getElementById('backToLoginBtn');
+
+        // State
+        let errorVisible = false;
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            setupEventListeners();
+            processOAuthCallback();
+        });
+
+        function setupEventListeners() {
+            continueBtn.addEventListener('click', () => {
+                window.location.href = '/dashboard';
+            });
+
+            retryBtn.addEventListener('click', () => {
+                window.location.reload();
+            });
+
+            backToLoginBtn.addEventListener('click', () => {
+                window.location.href = '/login';
+            });
+
+            toggleErrorBtn.addEventListener('click', () => {
+                errorVisible = !errorVisible;
+                errorDetails.classList.toggle('show', errorVisible);
+                toggleErrorBtn.textContent = errorVisible ? 'Hide Error Details' : 'Show Error Details';
+            });
+        }
+
+        async function processOAuthCallback() {
+            try {
+                // Get URL parameters
+                const urlParams = new URLSearchParams(window.location.search);
+                const code = urlParams.get('code');
+                const state = urlParams.get('state');
+                const error = urlParams.get('error');
+                const errorDescription = urlParams.get('error_description');
+
+                // Check for GitHub errors
+                if (error) {
+                    throw new Error(errorDescription || `GitHub OAuth error: ${error}`);
+                }
+
+                if (!code || !state) {
+                    throw new Error('Missing OAuth parameters. Please try connecting again.');
+                }
+
+                // Update progress
+                updateProgress(30);
+                statusMessage.textContent = 'Exchanging authorization code...';
+
+                // Exchange code for access token
+                const response = await fetch('/api/github-auth', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        action: 'callback',
+                        code: code,
+                        state: state
+                    })
+                });
+
+                updateProgress(60);
+                statusMessage.textContent = 'Getting GitHub user info...';
+
+                const data = await response.json();
+
+                if (!response.ok || !data.success) {
+                    throw new Error(data.error || 'Failed to connect to GitHub');
+                }
+
+                updateProgress(90);
+                statusMessage.textContent = 'Finalizing connection...';
+
+                // Update UI with GitHub info
+                if (data.githubUsername) {
+                    githubUsername.textContent = data.githubUsername;
+                    
+                    if (data.githubAvatar) {
+                        githubAvatar.innerHTML = '';
+                        githubAvatar.style.backgroundImage = `url(${data.githubAvatar})`;
+                        githubAvatar.style.backgroundSize = 'cover';
+                        githubAvatar.style.backgroundPosition = 'center';
+                    }
+                    
+                    successMessage.textContent = `GitHub account @${data.githubUsername} connected successfully!`;
+                }
+
+                updateProgress(100);
+                
+                // Show success after a brief delay
+                setTimeout(() => {
+                    loadingState.style.display = 'none';
+                    successState.style.display = 'block';
+                    
+                    // Auto-redirect after 3 seconds
+                    setTimeout(() => {
+                        window.location.href = '/dashboard';
+                    }, 3000);
+                }, 500);
+
+            } catch (error) {
+                console.error('OAuth callback error:', error);
+                showError(error.message);
+            }
+        }
+
+        function updateProgress(percent) {
+            progressFill.style.width = `${percent}%`;
+            
+            // Update messages based on progress
+            if (percent < 30) {
+                statusMessage.textContent = 'Starting GitHub connection...';
+            } else if (percent < 60) {
+                statusMessage.textContent = 'Verifying authorization...';
+            } else if (percent < 90) {
+                statusMessage.textContent = 'Setting up permissions...';
+            }
+        }
+
+        function showError(message) {
+            errorMessage.textContent = message;
+            errorDetailsText.textContent = message;
+            
+            // Special handling for common errors
+            if (message.includes('state')) {
+                errorMessage.textContent = 'Security verification failed. Please try connecting again.';
+            } else if (message.includes('rate limit')) {
+                errorMessage.textContent = 'GitHub rate limit reached. Please try again in a few minutes.';
+            } else if (message.includes('network') || message.includes('connection')) {
+                errorMessage.textContent = 'Network error. Please check your internet connection and try again.';
+            }
+            
+            loadingState.style.display = 'none';
+            errorState.style.display = 'block';
+            
+            // Check if we're in an iframe/popup
+            if (window.opener) {
+                backToLoginBtn.style.display = 'none';
+                retryBtn.textContent = 'Close and Retry';
+                retryBtn.onclick = () => {
+                    window.opener.postMessage({ type: 'github_oauth_error', error: message }, '*');
+                    window.close();
+                };
+            }
+        }
+
+        // Handle messages from parent window (if opened in popup)
+        window.addEventListener('message', function(event) {
+            if (event.data && event.data.type === 'github_oauth_complete') {
+                window.close();
+            }
+        });
+
+        // Auto-close if opened in popup after success
+        if (window.opener && !window.opener.closed) {
+            continueBtn.onclick = () => {
+                window.opener.postMessage({ type: 'github_oauth_complete' }, '*');
+                window.close();
+            };
+        }
+
+        // Handle browser back/forward
+        window.addEventListener('pageshow', function(event) {
+            if (event.persisted) {
+                window.location.reload();
+            }
+        });
+    </script>
+</body>
+</html>
