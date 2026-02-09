@@ -22,15 +22,15 @@
       "destination": "/public/index.html"
     },
     {
-      "source": "/login",
+      "source": "/login.html",
       "destination": "/public/login.html"
     },
     {
-      "source": "/dashboard",
+      "source": "/dashboard.html",
       "destination": "/public/dashboard.html"
     },
     {
-      "source": "/auth-callback",
+      "source": "/auth-callback.html",
       "destination": "/public/auth-callback.html"
     },
     {
