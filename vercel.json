@@ -1,0 +1,16 @@
+{
+  "functions": {
+    "api/*.js": {
+      "maxDuration": 30
+    }
+  },
+  "env": {
+    "SUPABASE_URL": "@supabase-url",
+    "SUPABASE_ANON_KEY": "@supabase-anon-key",
+    "SUPABASE_SERVICE_KEY": "@supabase-service-key",
+    "JWT_SECRET": "@jwt-secret",
+    "GITHUB_CLIENT_ID": "@github-client-id",
+    "GITHUB_CLIENT_SECRET": "@github-client-secret",
+    "ENCRYPTION_KEY": "@encryption-key"
+  }
+}
