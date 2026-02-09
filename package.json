@@ -1,0 +1,21 @@
+{
+  "name": "school-git",
+  "version": "1.0.0",
+  "description": "GitHub for Schools - A secure platform for students to use GitHub in restricted environments",
+  "main": "index.js",
+  "scripts": {
+    "dev": "vercel dev",
+    "deploy": "vercel deploy --prod"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.39.0",
+    "@octokit/rest": "^20.0.0",
+    "jsonwebtoken": "^9.0.2",
+    "crypto": "^1.0.1",
+    "bcryptjs": "^2.4.3",
+    "cookie": "^0.6.0"
+  },
+  "devDependencies": {
+    "vercel": "^28.18.0"
+  }
+}
