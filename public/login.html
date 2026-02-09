@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign In - School_git</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #6e48aa;
+            --primary-dark: #5a3990;
+            --secondary: #9d50bb;
+            --accent: #ff6b6b;
+            --light: #f8f9fa;
+            --dark: #2c3e50;
+            --gray: #6c757d;
+            --gray-light: #e9ecef;
+            --success: #28a745;
+            --danger: #dc3545;
+            --warning: #ffc107;
+            --info: #17a2b8;
+            --shadow: 0 4px 6px rgba(0,0,0,0.1);
+            --shadow-lg: 0 10px 25px rgba(0,0,0,0.15);
+            --radius: 12px;
+            --radius-sm: 8px;
+            --transition: all 0.3s ease;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .auth-container {
+            width: 100%;
+            max-width: 500px;
+        }
+
+        .auth-header {
+            text-align: center;
+            margin-bottom: 2.5rem;
+        }
+
+        .logo {
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+            margin-bottom: 1.5rem;
+        }
+
+        .logo-icon {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(45deg, var(--primary), var(--secondary));
+            border-radius: var(--radius);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.8rem;
+            font-weight: bold;
+            box-shadow: var(--shadow);
+        }
+
+        .logo-text {
+            font-size: 2rem;
+            font-weight: 700;
+            color: white;
+        }
+
+        .auth-title {
+            font-size: 2rem;
+            color: white;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+
+        .auth-subtitle {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 1.1rem;
+        }
+
+        .auth-card {
+            background: white;
+            border-radius: var(--radius);
+            padding: 2.5rem;
+            box-shadow: var(--shadow-lg);
+        }
+
+        .auth-tabs {
+            display: flex;
+            border-bottom: 1px solid var(--gray-light);
+            margin-bottom: 2rem;
+        }
+
+        .auth-tab {
+            flex: 1;
+            padding: 1rem;
+            background: none;
+            border: none;
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--gray);
+            cursor: pointer;
+            transition: var(--transition);
+            border-bottom: 3px solid transparent;
+        }
+
+        .auth-tab.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+            background: rgba(110, 72, 170, 0.05);
+        }
+
+        .auth-form {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .form-label {
+            font-weight: 600;
+            color: var(--dark);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .form-label i {
+            color: var(--primary);
+        }
+
+        .form-input {
+            padding: 1rem;
+            border: 2px solid var(--gray-light);
+            border-radius: var(--radius-sm);
+            font-size: 1rem;
+            transition: var(--transition);
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(110, 72, 170, 0.1);
+        }
+
+        .form-input.error {
+            border-color: var(--danger);
+        }
+
+        .form-error {
+            color: var(--danger);
+            font-size: 0.875rem;
+            display: none;
+        }
+
+        .form-error.show {
+            display: block;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            padding: 1rem 2rem;
+            font-size: 1rem;
+            font-weight: 600;
+            border-radius: var(--radius);
+            border: none;
+            cursor: pointer;
+            transition: var(--transition);
+            width: 100%;
+        }
+
+        .btn-primary {
+            background: linear-gradient(45deg, var(--primary), var(--secondary));
+            color: white;
+            box-shadow: var(--shadow);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .spinner {
+            width: 24px;
+            height: 24px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s linear infinite;
+            display: none;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .btn-primary.loading .spinner {
+            display: block;
+        }
+
+        .oauth-buttons {
+            margin: 2rem 0;
+        }
+
+        .divider {
+            display: flex;
+            align-items: center;
+            margin: 1.5rem 0;
+            color: var(--gray);
+        }
+
+        .divider::before,
+        .divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: var(--gray-light);
+        }
+
+        .divider span {
+            padding: 0 1rem;
+        }
+
+        .oauth-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            padding: 1rem;
+            border-radius: var(--radius-sm);
+            border: 2px solid var(--gray-light);
+            background: white;
+            color: var(--dark);
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            width: 100%;
+        }
+
+        .oauth-btn:hover {
+            border-color: var(--primary);
+            transform: translateY(-2px);
+        }
+
+        .oauth-btn.github {
+            background: var(--dark);
+            color: white;
+            border-color: var(--dark);
+        }
+
+        .oauth-btn.github:hover {
+            background: #333;
+        }
+
+        .form-footer {
+            text-align: center;
+            margin-top: 1.5rem;
+            color: var(--gray);
+        }
+
+        .form-link {
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 600;
+            transition: var(--transition);
+        }
+
+        .form-link:hover {
+            text-decoration: underline;
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: white;
+            text-decoration: none;
+            margin-top: 2rem;
+            transition: var(--transition);
+        }
+
+        .back-link:hover {
+            opacity: 0.8;
+        }
+
+        /* Toast Notification */
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: white;
+            padding: 1rem 1.5rem;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-lg);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            transform: translateX(150%);
+            transition: transform 0.3s ease;
+            z-index: 1000;
+            max-width: 350px;
+        }
+
+        .toast.show {
+            transform: translateX(0);
+        }
+
+        .toast.success {
+            border-left: 4px solid var(--success);
+        }
+
+        .toast.error {
+            border-left: 4px solid var(--danger);
+        }
+
+        .toast.warning {
+            border-left: 4px solid var(--warning);
+        }
+
+        .toast-icon {
+            font-size: 1.2rem;
+        }
+
+        .toast.success .toast-icon {
+            color: var(--success);
+        }
+
+        .toast.error .toast-icon {
+            color: var(--danger);
+        }
+
+        .toast-content {
+            flex: 1;
+        }
+
+        .toast-title {
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+
+        .toast-message {
+            font-size: 0.9rem;
+            color: var(--gray);
+        }
+
+        .toast-close {
+            background: none;
+            border: none;
+            color: var(--gray);
+            cursor: pointer;
+            font-size: 1rem;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .auth-card {
+                padding: 2rem;
+            }
+            
+            .auth-title {
+                font-size: 1.8rem;
+            }
+            
+            .logo-text {
+                font-size: 1.8rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="auth-container">
+        <div class="auth-header">
+            <a href="index.html" class="logo">
+                <div class="logo-icon">
+                    <i class="fas fa-graduation-cap"></i>
+                </div>
+                <span class="logo-text">School_git</span>
+            </a>
+            
+            <h1 class="auth-title">Welcome Back</h1>
+            <p class="auth-subtitle">Sign in to access your coding workspace</p>
+        </div>
+        
+        <div class="auth-card">
+            <div class="auth-tabs">
+                <button class="auth-tab active" data-tab="login">Sign In</button>
+                <button class="auth-tab" data-tab="register">Create Account</button>
+            </div>
+            
+            <!-- Login Form -->
+            <form class="auth-form" id="loginForm" style="display: block;">
+                <div class="form-group">
+                    <label class="form-label" for="loginEmail">
+                        <i class="fas fa-envelope"></i>
+                        School Email
+                    </label>
+                    <input type="email" id="loginEmail" class="form-input" 
+                           placeholder="you@yourschool.edu" required>
+                    <div class="form-error" id="loginEmailError"></div>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="loginPassword">
+                        <i class="fas fa-lock"></i>
+                        Password
+                    </label>
+                    <input type="password" id="loginPassword" class="form-input" 
+                           placeholder="Enter your password" required>
+                    <div class="form-error" id="loginPasswordError"></div>
+                </div>
+                
+                <button type="submit" class="btn btn-primary" id="loginSubmitBtn">
+                    <span class="spinner"></span>
+                    <span>Sign In</span>
+                </button>
+                
+                <div class="form-footer">
+                    <a href="#" class="form-link">Forgot password?</a>
+                </div>
+            </form>
+            
+            <!-- Register Form -->
+            <form class="auth-form" id="registerForm" style="display: none;">
+                <div class="form-group">
+                    <label class="form-label" for="registerUsername">
+                        <i class="fas fa-user"></i>
+                        Username
+                    </label>
+                    <input type="text" id="registerUsername" class="form-input" 
+                           placeholder="Choose a username" required>
+                    <div class="form-error" id="registerUsernameError"></div>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="registerEmail">
+                        <i class="fas fa-envelope"></i>
+                        School Email
+                    </label>
+                    <input type="email" id="registerEmail" class="form-input" 
+                           placeholder="you@yourschool.edu" required>
+                    <div class="form-error" id="registerEmailError"></div>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="registerPassword">
+                        <i class="fas fa-lock"></i>
+                        Password
+                    </label>
+                    <input type="password" id="registerPassword" class="form-input" 
+                           placeholder="Create a strong password" required>
+                    <div class="form-error" id="registerPasswordError"></div>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="registerConfirmPassword">
+                        <i class="fas fa-lock"></i>
+                        Confirm Password
+                    </label>
+                    <input type="password" id="registerConfirmPassword" class="form-input" 
+                           placeholder="Confirm your password" required>
+                    <div class="form-error" id="registerConfirmPasswordError"></div>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="registerSchool">
+                        <i class="fas fa-school"></i>
+                        School Name (Optional)
+                    </label>
+                    <input type="text" id="registerSchool" class="form-input" 
+                           placeholder="Your school name">
+                </div>
+                
+                <button type="submit" class="btn btn-primary" id="registerSubmitBtn">
+                    <span class="spinner"></span>
+                    <span>Create Account</span>
+                </button>
+            </form>
+            
+            <div class="oauth-buttons">
+                <div class="divider">
+                    <span>Or continue with</span>
+                </div>
+                
+                <button class="oauth-btn github" id="githubAuthBtn">
+                    <i class="fab fa-github"></i>
+                    Connect GitHub Account
+                </button>
+            </div>
+            
+            <div class="form-footer">
+                <p style="margin-bottom: 0.5rem;">
+                    By signing up, you agree to our <a href="#" class="form-link">Educational Use Policy</a>
+                </p>
+                <p>
+                    This platform is designed for educational use only.
+                </p>
+            </div>
+        </div>
+        
+        <a href="index.html" class="back-link">
+            <i class="fas fa-arrow-left"></i>
+            Back to Homepage
+        </a>
+    </div>
+    
+    <!-- Toast Notification -->
+    <div class="toast" id="toast">
+        <div class="toast-icon">
+            <i class="fas fa-check-circle"></i>
+        </div>
+        <div class="toast-content">
+            <div class="toast-title" id="toastTitle">Success</div>
+            <div class="toast-message" id="toastMessage">Operation completed successfully</div>
+        </div>
+        <button class="toast-close" id="toastClose">
+            <i class="fas fa-times"></i>
+        </button>
+    </div>
+
+    <script>
+        // DOM Elements
+        const authTabs = document.querySelectorAll('.auth-tab');
+        const loginForm = document.getElementById('loginForm');
+        const registerForm = document.getElementById('registerForm');
+        const loginSubmitBtn = document.getElementById('loginSubmitBtn');
+        const registerSubmitBtn = document.getElementById('registerSubmitBtn');
+        const githubAuthBtn = document.getElementById('githubAuthBtn');
+        const toast = document.getElementById('toast');
+        const toastTitle = document.getElementById('toastTitle');
+        const toastMessage = document.getElementById('toastMessage');
+        const toastClose = document.getElementById('toastClose');
+
+        // Setup event listeners
+        document.addEventListener('DOMContentLoaded', function() {
+            setupEventListeners();
+        });
+
+        function setupEventListeners() {
+            // Auth tabs
+            authTabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    // Update active tab
+                    authTabs.forEach(t => t.classList.remove('active'));
+                    tab.classList.add('active');
+                    
+                    // Show corresponding form
+                    if (tab.dataset.tab === 'login') {
+                        loginForm.style.display = 'block';
+                        registerForm.style.display = 'none';
+                    } else {
+                        loginForm.style.display = 'none';
+                        registerForm.style.display = 'block';
+                    }
+                });
+            });
+
+            // Forms
+            loginForm.addEventListener('submit', handleLogin);
+            registerForm.addEventListener('submit', handleRegister);
+            
+            // GitHub OAuth
+            githubAuthBtn.addEventListener('click', initiateGitHubOAuth);
+            
+            // Toast
+            toastClose.addEventListener('click', hideToast);
+        }
+
+        function showToast(type, title, message, duration = 5000) {
+            toast.className = `toast ${type}`;
+            toastTitle.textContent = title;
+            toastMessage.textContent = message;
+            
+            // Update icon based on type
+            const icon = toast.querySelector('.toast-icon i');
+            icon.className = type === 'success' ? 'fas fa-check-circle' :
+                            type === 'error' ? 'fas fa-exclamation-circle' :
+                            type === 'warning' ? 'fas fa-exclamation-triangle' :
+                            'fas fa-info-circle';
+            
+            toast.classList.add('show');
+            
+            // Auto hide
+            setTimeout(() => {
+                hideToast();
+            }, duration);
+        }
+
+        function hideToast() {
+            toast.classList.remove('show');
+        }
+
+        async function handleLogin(e) {
+            e.preventDefault();
+            
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+            
+            // Basic validation
+            if (!email || !password) {
+                showToast('error', 'Validation Error', 'Please fill in all fields');
+                return;
+            }
+            
+            // Show loading
+            loginSubmitBtn.disabled = true;
+            loginSubmitBtn.classList.add('loading');
+            
+            try {
+                const response = await fetch('/api/auth', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        action: 'login',
+                        email: email,
+                        password: password
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    // Store session token in cookie via server
+                    document.cookie = `session_token=${data.sessionToken}; path=/; max-age=31536000; Secure; SameSite=Strict`;
+                    
+                    // Show success message
+                    showToast('success', 'Welcome Back!', 'Redirecting to dashboard...');
+                    
+                    // Redirect to dashboard
+                    setTimeout(() => {
+                        window.location.href = 'dashboard.html';
+                    }, 1000);
+                } else {
+                    showToast('error', 'Login Failed', data.error || 'Invalid credentials');
+                }
+            } catch (error) {
+                showToast('error', 'Connection Error', 'Unable to connect to server');
+                console.error('Login error:', error);
+            } finally {
+                // Hide loading
+                loginSubmitBtn.disabled = false;
+                loginSubmitBtn.classList.remove('loading');
+            }
+        }
+
+        async function handleRegister(e) {
+            e.preventDefault();
+            
+            const username = document.getElementById('registerUsername').value;
+            const email = document.getElementById('registerEmail').value;
+            const password = document.getElementById('registerPassword').value;
+            const confirmPassword = document.getElementById('registerConfirmPassword').value;
+            const school = document.getElementById('registerSchool').value;
+            
+            // Validation
+            const errors = [];
+            
+            if (username.length < 3) {
+                errors.push('Username must be at least 3 characters');
+            }
+            
+            if (!email.match(/^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/)) {
+                errors.push('Please enter a valid school email');
+            }
+            
+            if (password.length < 6) {
+                errors.push('Password must be at least 6 characters');
+            }
+            
+            if (password !== confirmPassword) {
+                errors.push('Passwords do not match');
+            }
+            
+            if (errors.length > 0) {
+                showToast('error', 'Validation Error', errors[0]);
+                return;
+            }
+            
+            // Show loading
+            registerSubmitBtn.disabled = true;
+            registerSubmitBtn.classList.add('loading');
+            
+            try {
+                const response = await fetch('/api/auth', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        action: 'register',
+                        email: email,
+                        password: password,
+                        username: username,
+                        schoolName: school
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    // Store session token in cookie via server
+                    document.cookie = `session_token=${data.sessionToken}; path=/; max-age=31536000; Secure; SameSite=Strict`;
+                    
+                    // Show success message
+                    showToast('success', 'Account Created!', 'Welcome to School_git!');
+                    
+                    // Redirect to dashboard
+                    setTimeout(() => {
+                        window.location.href = 'dashboard.html';
+                    }, 1500);
+                } else {
+                    showToast('error', 'Registration Failed', data.error || 'Unable to create account');
+                }
+            } catch (error) {
+                showToast('error', 'Connection Error', 'Unable to connect to server');
+                console.error('Registration error:', error);
+            } finally {
+                // Hide loading
+                registerSubmitBtn.disabled = false;
+                registerSubmitBtn.classList.remove('loading');
+            }
+        }
+
+        async function initiateGitHubOAuth() {
+            try {
+                const response = await fetch('/api/github-auth', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        action: 'initiate'
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    // Open GitHub OAuth in new window
+                    const width = 600;
+                    const height = 700;
+                    const left = (window.innerWidth - width) / 2;
+                    const top = (window.innerHeight - height) / 2;
+                    
+                    window.open(
+                        data.authUrl,
+                        'github_auth',
+                        `width=${width},height=${height},left=${left},top=${top}`
+                    );
+                } else {
+                    showToast('error', 'GitHub Connection', 'Failed to initiate GitHub connection');
+                }
+            } catch (error) {
+                showToast('error', 'Connection Error', 'Unable to connect to GitHub');
+                console.error('GitHub OAuth error:', error);
+            }
+        }
+    </script>
+</body>
+</html>
