@@ -1,0 +1,1339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - School_git</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #6e48aa;
+            --primary-dark: #5a3990;
+            --secondary: #9d50bb;
+            --accent: #ff6b6b;
+            --light: #f8f9fa;
+            --dark: #2c3e50;
+            --gray: #6c757d;
+            --gray-light: #e9ecef;
+            --gray-dark: #343a40;
+            --success: #28a745;
+            --danger: #dc3545;
+            --warning: #ffc107;
+            --info: #17a2b8;
+            --shadow: 0 4px 6px rgba(0,0,0,0.1);
+            --shadow-lg: 0 10px 25px rgba(0,0,0,0.15);
+            --radius: 12px;
+            --radius-sm: 8px;
+            --transition: all 0.3s ease;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+        }
+
+        body {
+            background: var(--light);
+            color: var(--dark);
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        /* Header */
+        header {
+            background: white;
+            box-shadow: var(--shadow);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .header-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 0;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+        }
+
+        .logo-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(45deg, var(--primary), var(--secondary));
+            border-radius: var(--radius-sm);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+
+        .logo-text {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--dark);
+        }
+
+        .user-menu {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(45deg, var(--primary), var(--secondary));
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+        }
+
+        .username {
+            font-weight: 600;
+            color: var(--dark);
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 0.7rem 1.5rem;
+            font-size: 0.9rem;
+            font-weight: 600;
+            border-radius: var(--radius-sm);
+            border: none;
+            cursor: pointer;
+            transition: var(--transition);
+            text-decoration: none;
+        }
+
+        .btn-primary {
+            background: linear-gradient(45deg, var(--primary), var(--secondary));
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow);
+        }
+
+        .btn-secondary {
+            background: var(--light);
+            color: var(--dark);
+            border: 1px solid var(--gray-light);
+        }
+
+        .btn-secondary:hover {
+            background: var(--gray-light);
+        }
+
+        /* Main Layout */
+        .dashboard {
+            display: flex;
+            min-height: calc(100vh - 72px);
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 250px;
+            background: white;
+            border-right: 1px solid var(--gray-light);
+            padding: 2rem 0;
+            position: sticky;
+            top: 72px;
+            height: calc(100vh - 72px);
+            overflow-y: auto;
+        }
+
+        .sidebar-section {
+            padding: 0 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .sidebar-title {
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            color: var(--gray);
+            margin-bottom: 1rem;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+
+        .sidebar-nav {
+            list-style: none;
+        }
+
+        .sidebar-item {
+            margin-bottom: 0.5rem;
+        }
+
+        .sidebar-link {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 0.8rem 1rem;
+            text-decoration: none;
+            color: var(--dark);
+            border-radius: var(--radius-sm);
+            transition: var(--transition);
+        }
+
+        .sidebar-link:hover,
+        .sidebar-link.active {
+            background: rgba(110, 72, 170, 0.1);
+            color: var(--primary);
+        }
+
+        .sidebar-link i {
+            width: 20px;
+            text-align: center;
+        }
+
+        .sidebar-count {
+            margin-left: auto;
+            background: var(--gray-light);
+            color: var(--gray-dark);
+            padding: 0.2rem 0.6rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            padding: 2rem;
+        }
+
+        .content-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        .page-title {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--dark);
+        }
+
+        .page-subtitle {
+            color: var(--gray);
+            margin-top: 0.5rem;
+        }
+
+        /* Stats Cards */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            border-left: 4px solid var(--primary);
+        }
+
+        .stat-card.success {
+            border-left-color: var(--success);
+        }
+
+        .stat-card.warning {
+            border-left-color: var(--warning);
+        }
+
+        .stat-card.info {
+            border-left-color: var(--info);
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--dark);
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-label {
+            color: var(--gray);
+            font-size: 0.9rem;
+        }
+
+        /* Repositories Grid */
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 2rem 0 1.5rem;
+        }
+
+        .section-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: var(--dark);
+        }
+
+        .repos-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .repo-card {
+            background: white;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            padding: 1.5rem;
+            border: 1px solid var(--gray-light);
+            transition: var(--transition);
+            cursor: pointer;
+        }
+
+        .repo-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-lg);
+            border-color: var(--primary);
+        }
+
+        .repo-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 1rem;
+        }
+
+        .repo-name {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--primary);
+            margin-bottom: 0.25rem;
+        }
+
+        .repo-visibility {
+            font-size: 0.8rem;
+            padding: 0.2rem 0.6rem;
+            border-radius: 20px;
+            background: var(--gray-light);
+            color: var(--gray-dark);
+        }
+
+        .repo-visibility.public {
+            background: rgba(40, 167, 69, 0.1);
+            color: var(--success);
+        }
+
+        .repo-visibility.private {
+            background: rgba(220, 53, 69, 0.1);
+            color: var(--danger);
+        }
+
+        .repo-desc {
+            color: var(--gray);
+            font-size: 0.9rem;
+            line-height: 1.5;
+            margin-bottom: 1.5rem;
+            height: 60px;
+            overflow: hidden;
+        }
+
+        .repo-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-top: 1px solid var(--gray-light);
+            padding-top: 1rem;
+        }
+
+        .repo-language {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 0.85rem;
+            color: var(--gray);
+        }
+
+        .language-color {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: var(--primary);
+        }
+
+        .repo-updated {
+            font-size: 0.85rem;
+            color: var(--gray);
+        }
+
+        /* GitHub Status */
+        .github-status {
+            background: white;
+            border-radius: var(--radius);
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            box-shadow: var(--shadow);
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .github-avatar {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: var(--dark);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.5rem;
+        }
+
+        .github-info {
+            flex: 1;
+        }
+
+        .github-username {
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+
+        .github-status-text {
+            color: var(--gray);
+            font-size: 0.9rem;
+        }
+
+        .github-status.connected {
+            border-left: 4px solid var(--success);
+        }
+
+        .github-status.disconnected {
+            border-left: 4px solid var(--danger);
+        }
+
+        /* Create Repo Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(5px);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .modal.active {
+            display: flex;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: var(--radius);
+            width: 100%;
+            max-width: 500px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: var(--shadow-lg);
+            animation: slideUp 0.4s ease;
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(50px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .modal-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid var(--gray-light);
+            position: relative;
+        }
+
+        .modal-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--dark);
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 1.5rem;
+            right: 1.5rem;
+            background: none;
+            border: none;
+            font-size: 1.2rem;
+            color: var(--gray);
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .modal-close:hover {
+            color: var(--danger);
+            transform: rotate(90deg);
+        }
+
+        .modal-body {
+            padding: 1.5rem;
+        }
+
+        .modal-footer {
+            padding: 1.5rem;
+            border-top: 1px solid var(--gray-light);
+            display: flex;
+            justify-content: flex-end;
+            gap: 1rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: var(--dark);
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 0.8rem 1rem;
+            border: 2px solid var(--gray-light);
+            border-radius: var(--radius-sm);
+            font-size: 1rem;
+            transition: var(--transition);
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(110, 72, 170, 0.1);
+        }
+
+        .form-check {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .form-check-input {
+            width: 18px;
+            height: 18px;
+        }
+
+        .form-check-label {
+            font-size: 0.9rem;
+            color: var(--gray);
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+            background: white;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+        }
+
+        .empty-state-icon {
+            font-size: 4rem;
+            color: var(--gray-light);
+            margin-bottom: 1.5rem;
+        }
+
+        .empty-state-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: var(--dark);
+        }
+
+        .empty-state-text {
+            color: var(--gray);
+            margin-bottom: 2rem;
+            max-width: 400px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        /* Toast Notification */
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: white;
+            padding: 1rem 1.5rem;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-lg);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            transform: translateX(150%);
+            transition: transform 0.3s ease;
+            z-index: 3000;
+            max-width: 350px;
+        }
+
+        .toast.show {
+            transform: translateX(0);
+        }
+
+        .toast.success {
+            border-left: 4px solid var(--success);
+        }
+
+        .toast.error {
+            border-left: 4px solid var(--danger);
+        }
+
+        .toast.warning {
+            border-left: 4px solid var(--warning);
+        }
+
+        .toast-icon {
+            font-size: 1.2rem;
+        }
+
+        .toast.success .toast-icon {
+            color: var(--success);
+        }
+
+        .toast.error .toast-icon {
+            color: var(--danger);
+        }
+
+        .toast-content {
+            flex: 1;
+        }
+
+        .toast-title {
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+
+        .toast-message {
+            font-size: 0.9rem;
+            color: var(--gray);
+        }
+
+        .toast-close {
+            background: none;
+            border: none;
+            color: var(--gray);
+            cursor: pointer;
+            font-size: 1rem;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .dashboard {
+                flex-direction: column;
+            }
+            
+            .sidebar {
+                width: 100%;
+                height: auto;
+                position: static;
+                padding: 1rem 0;
+            }
+            
+            .sidebar-nav {
+                display: flex;
+                overflow-x: auto;
+                padding: 0 1rem;
+            }
+            
+            .sidebar-item {
+                flex-shrink: 0;
+            }
+            
+            .sidebar-link {
+                white-space: nowrap;
+            }
+            
+            .sidebar-count {
+                display: none;
+            }
+            
+            .repos-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header>
+        <div class="container header-container">
+            <a href="index.html" class="logo">
+                <div class="logo-icon">
+                    <i class="fas fa-graduation-cap"></i>
+                </div>
+                <span class="logo-text">School_git</span>
+            </a>
+            
+            <div class="user-menu">
+                <div class="user-info">
+                    <div class="user-avatar" id="userAvatar">JD</div>
+                    <span class="username" id="username">John Doe</span>
+                </div>
+                <button class="btn btn-secondary" id="logoutBtn">
+                    <i class="fas fa-sign-out-alt"></i>
+                    Logout
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Dashboard -->
+    <div class="dashboard">
+        <!-- Sidebar -->
+        <nav class="sidebar">
+            <div class="sidebar-section">
+                <div class="sidebar-title">Workspace</div>
+                <ul class="sidebar-nav">
+                    <li class="sidebar-item">
+                        <a href="#" class="sidebar-link active">
+                            <i class="fas fa-code"></i>
+                            My Repositories
+                            <span class="sidebar-count" id="repoCount">0</span>
+                        </a>
+                    </li>
+                    <li class="sidebar-item">
+                        <a href="#" class="sidebar-link">
+                            <i class="fas fa-star"></i>
+                            Starred
+                            <span class="sidebar-count">0</span>
+                        </a>
+                    </li>
+                    <li class="sidebar-item">
+                        <a href="#" class="sidebar-link">
+                            <i class="fas fa-users"></i>
+                            Collaborations
+                            <span class="sidebar-count">0</span>
+                        </a>
+                    </li>
+                </ul>
+            </div>
+            
+            <div class="sidebar-section">
+                <div class="sidebar-title">Learning</div>
+                <ul class="sidebar-nav">
+                    <li class="sidebar-item">
+                        <a href="#" class="sidebar-link">
+                            <i class="fas fa-book"></i>
+                            Git Tutorials
+                        </a>
+                    </li>
+                    <li class="sidebar-item">
+                        <a href="#" class="sidebar-link">
+                            <i class="fas fa-laptop-code"></i>
+                            Coding Lessons
+                        </a>
+                    </li>
+                    <li class="sidebar-item">
+                        <a href="#" class="sidebar-link">
+                            <i class="fas fa-project-diagram"></i>
+                            Project Templates
+                        </a>
+                    </li>
+                </ul>
+            </div>
+            
+            <div class="sidebar-section">
+                <div class="sidebar-title">Settings</div>
+                <ul class="sidebar-nav">
+                    <li class="sidebar-item">
+                        <a href="#" class="sidebar-link" id="githubSettingsBtn">
+                            <i class="fab fa-github"></i>
+                            GitHub Connection
+                        </a>
+                    </li>
+                    <li class="sidebar-item">
+                        <a href="#" class="sidebar-link">
+                            <i class="fas fa-user-cog"></i>
+                            Account Settings
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Content Header -->
+            <div class="content-header">
+                <div>
+                    <h1 class="page-title">My Repositories</h1>
+                    <p class="page-subtitle">Create, manage, and deploy your school projects</p>
+                </div>
+                <button class="btn btn-primary" id="createRepoBtn">
+                    <i class="fas fa-plus"></i>
+                    New Repository
+                </button>
+            </div>
+
+            <!-- GitHub Status -->
+            <div class="github-status" id="githubStatus">
+                <div class="github-avatar">
+                    <i class="fab fa-github"></i>
+                </div>
+                <div class="github-info">
+                    <div class="github-username" id="githubUsername">Not Connected</div>
+                    <div class="github-status-text" id="githubStatusText">
+                        Connect your GitHub account to create real repositories
+                    </div>
+                </div>
+                <button class="btn btn-primary" id="connectGithubBtn">
+                    <i class="fab fa-github"></i>
+                    Connect GitHub
+                </button>
+            </div>
+
+            <!-- Stats -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value" id="totalRepos">0</div>
+                    <div class="stat-label">Total Repositories</div>
+                </div>
+                <div class="stat-card success">
+                    <div class="stat-value" id="githubRepos">0</div>
+                    <div class="stat-label">On GitHub</div>
+                </div>
+                <div class="stat-card info">
+                    <div class="stat-value" id="localRepos">0</div>
+                    <div class="stat-label">Local Projects</div>
+                </div>
+            </div>
+
+            <!-- Repositories -->
+            <div class="section-header">
+                <h2 class="section-title">Recent Projects</h2>
+                <div class="btn-group">
+                    <button class="btn btn-secondary" id="refreshReposBtn">
+                        <i class="fas fa-sync-alt"></i>
+                        Refresh
+                    </button>
+                </div>
+            </div>
+
+            <div class="repos-grid" id="reposGrid">
+                <!-- Repositories will be loaded here -->
+            </div>
+
+            <!-- Empty State -->
+            <div class="empty-state" id="emptyState" style="display: none;">
+                <div class="empty-state-icon">
+                    <i class="fas fa-code-branch"></i>
+                </div>
+                <h3 class="empty-state-title">No repositories yet</h3>
+                <p class="empty-state-text">
+                    Create your first repository to start coding and learning version control
+                </p>
+                <button class="btn btn-primary" id="createFirstRepoBtn">
+                    <i class="fas fa-plus"></i>
+                    Create Your First Repository
+                </button>
+            </div>
+        </main>
+    </div>
+
+    <!-- Create Repo Modal -->
+    <div class="modal" id="createRepoModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Create New Repository</h2>
+                <button class="modal-close" id="closeRepoModal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="modal-body">
+                <form id="createRepoForm">
+                    <div class="form-group">
+                        <label class="form-label" for="repoName">Repository Name</label>
+                        <input type="text" id="repoName" class="form-control" 
+                               placeholder="my-school-project" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="repoDescription">Description (Optional)</label>
+                        <textarea id="repoDescription" class="form-control" 
+                                  rows="3" placeholder="A brief description of your project"></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <div class="form-check">
+                            <input type="checkbox" id="repoPrivate" class="form-check-input" checked>
+                            <label class="form-check-label" for="repoPrivate">
+                                Private repository (Recommended for school projects)
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <div class="form-check">
+                            <input type="checkbox" id="syncToGitHub" class="form-check-input">
+                            <label class="form-check-label" for="syncToGitHub">
+                                Sync to GitHub (Requires GitHub connection)
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Add initial files</label>
+                        <div style="background: var(--light); padding: 1rem; border-radius: var(--radius-sm);">
+                            <div class="form-check">
+                                <input type="checkbox" id="addReadme" class="form-check-input" checked>
+                                <label class="form-check-label" for="addReadme">
+                                    README.md
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input type="checkbox" id="addGitignore" class="form-check-input">
+                                <label class="form-check-label" for="addGitignore">
+                                    .gitignore
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input type="checkbox" id="addLicense" class="form-check-input">
+                                <label class="form-check-label" for="addLicense">
+                                    LICENSE
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="cancelRepoBtn">Cancel</button>
+                <button class="btn btn-primary" id="submitRepoBtn">
+                    <i class="fas fa-plus"></i>
+                    Create Repository
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div class="toast" id="toast">
+        <div class="toast-icon">
+            <i class="fas fa-check-circle"></i>
+        </div>
+        <div class="toast-content">
+            <div class="toast-title" id="toastTitle">Success</div>
+            <div class="toast-message" id="toastMessage">Operation completed successfully</div>
+        </div>
+        <button class="toast-close" id="toastClose">
+            <i class="fas fa-times"></i>
+        </button>
+    </div>
+
+    <script>
+        // DOM Elements
+        const logoutBtn = document.getElementById('logoutBtn');
+        const createRepoBtn = document.getElementById('createRepoBtn');
+        const createFirstRepoBtn = document.getElementById('createFirstRepoBtn');
+        const connectGithubBtn = document.getElementById('connectGithubBtn');
+        const githubSettingsBtn = document.getElementById('githubSettingsBtn');
+        const refreshReposBtn = document.getElementById('refreshReposBtn');
+        const createRepoModal = document.getElementById('createRepoModal');
+        const closeRepoModal = document.getElementById('closeRepoModal');
+        const cancelRepoBtn = document.getElementById('cancelRepoBtn');
+        const submitRepoBtn = document.getElementById('submitRepoBtn');
+        const createRepoForm = document.getElementById('createRepoForm');
+        const reposGrid = document.getElementById('reposGrid');
+        const emptyState = document.getElementById('emptyState');
+        const toast = document.getElementById('toast');
+        const toastTitle = document.getElementById('toastTitle');
+        const toastMessage = document.getElementById('toastMessage');
+        const toastClose = document.getElementById('toastClose');
+
+        // State
+        let userData = null;
+        let repos = [];
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            loadUserData();
+            loadRepositories();
+            setupEventListeners();
+        });
+
+        function setupEventListeners() {
+            // Buttons
+            logoutBtn.addEventListener('click', handleLogout);
+            createRepoBtn.addEventListener('click', showCreateRepoModal);
+            createFirstRepoBtn.addEventListener('click', showCreateRepoModal);
+            connectGithubBtn.addEventListener('click', connectGitHub);
+            githubSettingsBtn.addEventListener('click', connectGitHub);
+            refreshReposBtn.addEventListener('click', loadRepositories);
+            
+            // Modal
+            closeRepoModal.addEventListener('click', hideCreateRepoModal);
+            cancelRepoBtn.addEventListener('click', hideCreateRepoModal);
+            submitRepoBtn.addEventListener('click', handleCreateRepo);
+            
+            // Toast
+            toastClose.addEventListener('click', hideToast);
+            
+            // Close modal on outside click
+            createRepoModal.addEventListener('click', (e) => {
+                if (e.target === createRepoModal) {
+                    hideCreateRepoModal();
+                }
+            });
+        }
+
+        async function loadUserData() {
+            try {
+                // Get session token from cookie
+                const cookies = document.cookie.split(';').map(c => c.trim());
+                const sessionCookie = cookies.find(c => c.startsWith('session_token='));
+                
+                if (!sessionCookie) {
+                    window.location.href = 'login.html';
+                    return;
+                }
+                
+                const sessionToken = sessionCookie.split('=')[1];
+                
+                const response = await fetch('/api/auth', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        action: 'validate-session',
+                        sessionToken: sessionToken
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    userData = data.user;
+                    updateUserUI();
+                    checkGitHubStatus();
+                } else {
+                    window.location.href = 'login.html';
+                }
+            } catch (error) {
+                console.error('Error loading user data:', error);
+                window.location.href = 'login.html';
+            }
+        }
+
+        async function loadRepositories() {
+            try {
+                const response = await fetch('/api/list-repos', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        sessionToken: getSessionToken()
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    repos = data.repos;
+                    updateReposUI();
+                } else {
+                    showToast('error', 'Error', 'Failed to load repositories');
+                }
+            } catch (error) {
+                console.error('Error loading repositories:', error);
+                showToast('error', 'Error', 'Failed to load repositories');
+            }
+        }
+
+        function getSessionToken() {
+            const cookies = document.cookie.split(';').map(c => c.trim());
+            const sessionCookie = cookies.find(c => c.startsWith('session_token='));
+            return sessionCookie ? sessionCookie.split('=')[1] : null;
+        }
+
+        function updateUserUI() {
+            if (userData) {
+                // Update avatar with initials
+                const initials = userData.username.substring(0, 2).toUpperCase();
+                document.getElementById('userAvatar').textContent = initials;
+                document.getElementById('username').textContent = userData.username;
+            }
+        }
+
+        function updateReposUI() {
+            const repoCount = repos.length;
+            const githubRepos = repos.filter(r => r.isOnGitHub).length;
+            const localRepos = repoCount - githubRepos;
+            
+            // Update counts
+            document.getElementById('repoCount').textContent = repoCount;
+            document.getElementById('totalRepos').textContent = repoCount;
+            document.getElementById('githubRepos').textContent = githubRepos;
+            document.getElementById('localRepos').textContent = localRepos;
+            
+            // Show/hide empty state
+            if (repoCount === 0) {
+                emptyState.style.display = 'block';
+                reposGrid.innerHTML = '';
+            } else {
+                emptyState.style.display = 'none';
+                
+                // Render repos
+                reposGrid.innerHTML = repos.map(repo => `
+                    <div class="repo-card" data-repo-id="${repo.id}">
+                        <div class="repo-header">
+                            <div>
+                                <div class="repo-name">${repo.name}</div>
+                                <div class="repo-visibility ${repo.isOnGitHub ? 'public' : 'private'}">
+                                    ${repo.isOnGitHub ? 'Public' : 'Private'}
+                                </div>
+                            </div>
+                            <i class="fas fa-ellipsis-v" style="color: var(--gray); cursor: pointer;"></i>
+                        </div>
+                        <div class="repo-desc">
+                            ${repo.description || 'No description provided'}
+                        </div>
+                        <div class="repo-footer">
+                            <div class="repo-language">
+                                <span class="language-color"></span>
+                                <span>JavaScript</span>
+                            </div>
+                            <div class="repo-updated">
+                                Updated ${formatDate(repo.createdAt)}
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+                
+                // Add click listeners to repo cards
+                document.querySelectorAll('.repo-card').forEach(card => {
+                    card.addEventListener('click', (e) => {
+                        if (!e.target.closest('.fa-ellipsis-v')) {
+                            const repoId = card.dataset.repoId;
+                            openRepo(repoId);
+                        }
+                    });
+                });
+            }
+        }
+
+        async function checkGitHubStatus() {
+            try {
+                const response = await fetch('/api/github-auth', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        action: 'get-status',
+                        sessionToken: getSessionToken()
+                    })
+                });
+                
+                const data = await response.json();
+                
+                const githubStatus = document.getElementById('githubStatus');
+                const githubUsername = document.getElementById('githubUsername');
+                const githubStatusText = document.getElementById('githubStatusText');
+                const connectGithubBtn = document.getElementById('connectGithubBtn');
+                
+                if (data.success && data.connected) {
+                    githubStatus.className = 'github-status connected';
+                    githubUsername.textContent = data.githubUsername;
+                    githubStatusText.textContent = 'Connected to GitHub';
+                    connectGithubBtn.innerHTML = '<i class="fas fa-sync-alt"></i> Sync';
+                    connectGithubBtn.onclick = syncRepositories;
+                } else {
+                    githubStatus.className = 'github-status disconnected';
+                    githubUsername.textContent = 'Not Connected';
+                    githubStatusText.textContent = 'Connect your GitHub account to create real repositories';
+                    connectGithubBtn.innerHTML = '<i class="fab fa-github"></i> Connect GitHub';
+                    connectGithubBtn.onclick = connectGitHub;
+                }
+            } catch (error) {
+                console.error('Error checking GitHub status:', error);
+            }
+        }
+
+        function showCreateRepoModal() {
+            createRepoModal.classList.add('active');
+        }
+
+        function hideCreateRepoModal() {
+            createRepoModal.classList.remove('active');
+            createRepoForm.reset();
+        }
+
+        async function handleCreateRepo() {
+            const repoName = document.getElementById('repoName').value;
+            const description = document.getElementById('repoDescription').value;
+            const isPrivate = document.getElementById('repoPrivate').checked;
+            const syncToGitHub = document.getElementById('syncToGitHub').checked;
+            
+            if (!repoName) {
+                showToast('error', 'Validation Error', 'Repository name is required');
+                return;
+            }
+            
+            submitRepoBtn.disabled = true;
+            submitRepoBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating...';
+            
+            try {
+                const response = await fetch('/api/create-repo', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        sessionToken: getSessionToken(),
+                        repoName: repoName,
+                        description: description,
+                        isPrivate: isPrivate,
+                        syncToGitHub: syncToGitHub,
+                        files: []
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showToast('success', 'Repository Created', data.message);
+                    hideCreateRepoModal();
+                    loadRepositories();
+                } else {
+                    if (data.needsGithubAuth) {
+                        showToast('warning', 'GitHub Required', 'Please connect GitHub first');
+                        connectGitHub();
+                    } else {
+                        showToast('error', 'Error', data.error || 'Failed to create repository');
+                    }
+                }
+            } catch (error) {
+                showToast('error', 'Error', 'Failed to create repository');
+                console.error('Error creating repository:', error);
+            } finally {
+                submitRepoBtn.disabled = false;
+                submitRepoBtn.innerHTML = '<i class="fas fa-plus"></i> Create Repository';
+            }
+        }
+
+        function connectGitHub() {
+            window.open('/api/github-auth?action=initiate', '_blank', 'width=600,height=700');
+        }
+
+        async function syncRepositories() {
+            // Placeholder for sync functionality
+            showToast('info', 'Sync', 'Syncing repositories to GitHub...');
+        }
+
+        function openRepo(repoId) {
+            // Placeholder for opening repo details
+            showToast('info', 'Opening Repository', 'Repository details would open here');
+        }
+
+        async function handleLogout() {
+            try {
+                const response = await fetch('/api/auth', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        action: 'logout',
+                        sessionToken: getSessionToken()
+                    })
+                });
+                
+                // Clear session cookie
+                document.cookie = 'session_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+                
+                // Redirect to login
+                window.location.href = 'login.html';
+            } catch (error) {
+                console.error('Error logging out:', error);
+                window.location.href = 'login.html';
+            }
+        }
+
+        function showToast(type, title, message, duration = 5000) {
+            toast.className = `toast ${type}`;
+            toastTitle.textContent = title;
+            toastMessage.textContent = message;
+            
+            const icon = toast.querySelector('.toast-icon i');
+            icon.className = type === 'success' ? 'fas fa-check-circle' :
+                            type === 'error' ? 'fas fa-exclamation-circle' :
+                            type === 'warning' ? 'fas fa-exclamation-triangle' :
+                            'fas fa-info-circle';
+            
+            toast.classList.add('show');
+            
+            setTimeout(() => {
+                hideToast();
+            }, duration);
+        }
+
+        function hideToast() {
+            toast.classList.remove('show');
+        }
+
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('en-US', {
+                month: 'short',
+                day: 'numeric',
+                year: 'numeric'
+            });
+        }
+    </script>
+</body>
+</html>
