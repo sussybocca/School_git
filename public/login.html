@@ -221,6 +221,12 @@
         @keyframes spin {
             to { transform: rotate(360deg); }
         }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.05); opacity: 0.8; }
+            100% { transform: scale(1); opacity: 1; }
+        }
 
         .btn-primary.loading .spinner {
             display: block;
@@ -343,6 +349,16 @@
 
         .toast.warning {
             border-left: 4px solid var(--warning);
+            background: linear-gradient(45deg, #fff3cd, #ffeaa7);
+            color: #856404;
+        }
+
+        .toast.warning .toast-icon {
+            color: var(--warning);
+        }
+
+        .toast.info {
+            border-left: 4px solid var(--info);
         }
 
         .toast-icon {
@@ -369,6 +385,10 @@
         .toast-message {
             font-size: 0.9rem;
             color: var(--gray);
+        }
+
+        .toast-warning .toast-message {
+            color: #856404;
         }
 
         .toast-close {
@@ -558,9 +578,13 @@
         const toastMessage = document.getElementById('toastMessage');
         const toastClose = document.getElementById('toastClose');
 
+        // Current user session
+        let currentSessionToken = null;
+
         // Setup event listeners
         document.addEventListener('DOMContentLoaded', function() {
             setupEventListeners();
+            checkExistingSession();
         });
 
         function setupEventListeners() {
@@ -593,6 +617,18 @@
             toastClose.addEventListener('click', hideToast);
         }
 
+        function checkExistingSession() {
+            // Try to get session token from cookie
+            const cookies = document.cookie.split(';').map(c => c.trim());
+            const sessionCookie = cookies.find(c => c.startsWith('session_token='));
+            
+            if (sessionCookie) {
+                currentSessionToken = sessionCookie.split('=')[1];
+                // If user already has session, suggest going to dashboard
+                showToast('info', 'Already Logged In', 'You appear to be logged in. Go to dashboard?', 3000);
+            }
+        }
+
         function showToast(type, title, message, duration = 5000) {
             toast.className = `toast ${type}`;
             toastTitle.textContent = title;
@@ -603,7 +639,8 @@
             icon.className = type === 'success' ? 'fas fa-check-circle' :
                             type === 'error' ? 'fas fa-exclamation-circle' :
                             type === 'warning' ? 'fas fa-exclamation-triangle' :
-                            'fas fa-info-circle';
+                            type === 'info' ? 'fas fa-info-circle' :
+                            'fas fa-check-circle';
             
             toast.classList.add('show');
             
@@ -611,10 +648,21 @@
             setTimeout(() => {
                 hideToast();
             }, duration);
+            
+            // Special handling for info toasts
+            if (type === 'info' && title.includes('Already Logged In')) {
+                // Add click to redirect
+                toast.style.cursor = 'pointer';
+                toast.onclick = () => {
+                    window.location.href = 'dashboard.html';
+                };
+            }
         }
 
         function hideToast() {
             toast.classList.remove('show');
+            toast.style.cursor = 'default';
+            toast.onclick = null;
         }
 
         async function handleLogin(e) {
@@ -643,14 +691,33 @@
                         action: 'login',
                         email: email,
                         password: password
-                    })
+                    }),
+                    credentials: 'include' // IMPORTANT: Include cookies
                 });
+                
+                // Check if response is JSON
+                const contentType = response.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    throw new Error('Server returned non-JSON response');
+                }
                 
                 const data = await response.json();
                 
                 if (data.success) {
-                    // Store session token in cookie via server
-                    document.cookie = `session_token=${data.sessionToken}; path=/; max-age=31536000; Secure; SameSite=Strict`;
+                    // Store session token client-side as fallback
+                    currentSessionToken = data.sessionToken;
+                    
+                    // Set cookie manually as backup
+                    const oneYearFromNow = new Date();
+                    oneYearFromNow.setFullYear(oneYearFromNow.getFullYear() + 1);
+                    document.cookie = `session_token=${data.sessionToken}; path=/; expires=${oneYearFromNow.toUTCString()}; Secure; SameSite=Strict`;
+                    
+                    // Also store in localStorage as backup
+                    try {
+                        localStorage.setItem('school_git_session', data.sessionToken);
+                    } catch (e) {
+                        console.log('LocalStorage not available');
+                    }
                     
                     // Show success message
                     showToast('success', 'Welcome Back!', 'Redirecting to dashboard...');
@@ -663,8 +730,14 @@
                     showToast('error', 'Login Failed', data.error || 'Invalid credentials');
                 }
             } catch (error) {
-                showToast('error', 'Connection Error', 'Unable to connect to server');
                 console.error('Login error:', error);
+                if (error.message.includes('non-JSON')) {
+                    showToast('error', 'Server Error', 'Server returned invalid response. Check API endpoint.');
+                } else if (error.message.includes('Failed to fetch')) {
+                    showToast('error', 'Network Error', 'Cannot connect to server. Check your internet connection.');
+                } else {
+                    showToast('error', 'Connection Error', 'Unable to connect to server');
+                }
             } finally {
                 // Hide loading
                 loginSubmitBtn.disabled = false;
@@ -721,17 +794,36 @@
                         password: password,
                         username: username,
                         schoolName: school
-                    })
+                    }),
+                    credentials: 'include' // IMPORTANT: Include cookies
                 });
+                
+                // Check if response is JSON
+                const contentType = response.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    throw new Error('Server returned non-JSON response');
+                }
                 
                 const data = await response.json();
                 
                 if (data.success) {
-                    // Store session token in cookie via server
-                    document.cookie = `session_token=${data.sessionToken}; path=/; max-age=31536000; Secure; SameSite=Strict`;
+                    // Store session token client-side as fallback
+                    currentSessionToken = data.sessionToken;
+                    
+                    // Set cookie manually as backup
+                    const oneYearFromNow = new Date();
+                    oneYearFromNow.setFullYear(oneYearFromNow.getFullYear() + 1);
+                    document.cookie = `session_token=${data.sessionToken}; path=/; expires=${oneYearFromNow.toUTCString()}; Secure; SameSite=Strict`;
+                    
+                    // Also store in localStorage as backup
+                    try {
+                        localStorage.setItem('school_git_session', data.sessionToken);
+                    } catch (e) {
+                        console.log('LocalStorage not available');
+                    }
                     
                     // Show success message
-                    showToast('success', 'Account Created!', 'Welcome to School_git!');
+                    showToast('success', 'Account Created!', 'Welcome to School_git! Redirecting...');
                     
                     // Redirect to dashboard
                     setTimeout(() => {
@@ -741,8 +833,14 @@
                     showToast('error', 'Registration Failed', data.error || 'Unable to create account');
                 }
             } catch (error) {
-                showToast('error', 'Connection Error', 'Unable to connect to server');
                 console.error('Registration error:', error);
+                if (error.message.includes('non-JSON')) {
+                    showToast('error', 'Server Error', 'Server returned invalid response. Check API endpoint.');
+                } else if (error.message.includes('Failed to fetch')) {
+                    showToast('error', 'Network Error', 'Cannot connect to server. Check your internet connection.');
+                } else {
+                    showToast('error', 'Connection Error', 'Unable to connect to server');
+                }
             } finally {
                 // Hide loading
                 registerSubmitBtn.disabled = false;
@@ -752,36 +850,154 @@
 
         async function initiateGitHubOAuth() {
             try {
+                // First, check if we have a session token
+                let sessionToken = currentSessionToken;
+                
+                // If not in memory, try to get from cookie
+                if (!sessionToken) {
+                    const cookies = document.cookie.split(';').map(c => c.trim());
+                    const sessionCookie = cookies.find(c => c.startsWith('session_token='));
+                    if (sessionCookie) {
+                        sessionToken = sessionCookie.split('=')[1];
+                        currentSessionToken = sessionToken;
+                    }
+                }
+                
+                // If still no session token, try localStorage
+                if (!sessionToken) {
+                    try {
+                        const storedToken = localStorage.getItem('school_git_session');
+                        if (storedToken) {
+                            sessionToken = storedToken;
+                            currentSessionToken = sessionToken;
+                        }
+                    } catch (e) {
+                        console.log('LocalStorage not available');
+                    }
+                }
+                
+                // If no session token, check which form is active
+                if (!sessionToken) {
+                    const loginFormVisible = loginForm.style.display !== 'none';
+                    const registerFormVisible = registerForm.style.display !== 'none';
+                    
+                    if (loginFormVisible) {
+                        // We're on login form - need to log in first
+                        showToast('warning', 'Login Required', 'Please sign in first before connecting GitHub');
+                        
+                        // Highlight the login button
+                        const loginBtn = document.querySelector('.auth-tab[data-tab="login"]');
+                        if (loginBtn) {
+                            loginBtn.style.animation = 'pulse 1s infinite';
+                            setTimeout(() => {
+                                loginBtn.style.animation = '';
+                            }, 3000);
+                        }
+                        
+                        return;
+                    } else if (registerFormVisible) {
+                        // We're on register form - user needs to create account first
+                        showToast('warning', 'Account Required', 'Please create an account first before connecting GitHub');
+                        return;
+                    } else {
+                        // Can't determine state - show error
+                        showToast('error', 'Authentication Required', 'Please log in or create an account first');
+                        return;
+                    }
+                }
+                
+                // Now initiate GitHub OAuth with session token
+                showToast('info', 'Connecting GitHub', 'Initiating GitHub connection...', 2000);
+                
                 const response = await fetch('/api/github-auth', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
-                        action: 'initiate'
-                    })
+                        action: 'initiate',
+                        sessionToken: sessionToken
+                    }),
+                    credentials: 'include' // IMPORTANT: Include cookies
                 });
+                
+                // Check for 401 Unauthorized specifically
+                if (response.status === 401) {
+                    // Session expired or invalid
+                    showToast('error', 'Session Expired', 'Your session has expired. Please log in again.');
+                    
+                    // Clear session data
+                    currentSessionToken = null;
+                    document.cookie = 'session_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+                    try {
+                        localStorage.removeItem('school_git_session');
+                    } catch (e) {}
+                    
+                    // Force reload to show login form
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1500);
+                    
+                    return;
+                }
+                
+                // Check if response is JSON
+                const contentType = response.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    throw new Error('Server returned non-JSON response');
+                }
                 
                 const data = await response.json();
                 
                 if (data.success) {
+                    // Show success message
+                    showToast('success', 'Connecting to GitHub', 'Opening GitHub authorization...', 2000);
+                    
                     // Open GitHub OAuth in new window
                     const width = 600;
                     const height = 700;
                     const left = (window.innerWidth - width) / 2;
                     const top = (window.innerHeight - height) / 2;
                     
-                    window.open(
+                    const popup = window.open(
                         data.authUrl,
                         'github_auth',
                         `width=${width},height=${height},left=${left},top=${top}`
                     );
+                    
+                    // Check if popup was blocked
+                    if (!popup || popup.closed || typeof popup.closed == 'undefined') {
+                        showToast('warning', 'Popup Blocked', 'Please allow popups for GitHub authorization');
+                        
+                        // Alternative: Redirect in same window
+                        const useRedirect = confirm('Popup blocked. Redirect to GitHub instead?');
+                        if (useRedirect) {
+                            window.location.href = data.authUrl;
+                        }
+                    }
+                    
                 } else {
-                    showToast('error', 'GitHub Connection', 'Failed to initiate GitHub connection');
+                    // Handle specific errors
+                    if (data.localOnly) {
+                        showToast('info', 'Local Mode', 'GitHub access is disabled for your school. Working locally.');
+                    } else if (data.needsLogin) {
+                        showToast('error', 'Login Required', 'Please sign in first');
+                    } else {
+                        showToast('error', 'GitHub Connection', data.error || 'Failed to initiate GitHub connection');
+                    }
                 }
+                
             } catch (error) {
-                showToast('error', 'Connection Error', 'Unable to connect to GitHub');
                 console.error('GitHub OAuth error:', error);
+                
+                // Check error type
+                if (error.message && error.message.includes('non-JSON')) {
+                    showToast('error', 'Server Error', 'Server returned invalid response. Check API endpoint.');
+                } else if (error.message && error.message.includes('Failed to fetch')) {
+                    showToast('error', 'Network Error', 'Cannot connect to server. Check your internet connection.');
+                } else {
+                    showToast('error', 'Connection Error', 'Unable to connect to GitHub');
+                }
             }
         }
     </script>
