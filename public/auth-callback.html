@@ -964,6 +964,65 @@
             switchState('error');
         }
 
+        // Get session token from multiple sources
+        function getSessionToken() {
+            // Try localStorage first (if opened from main app)
+            let token = localStorage.getItem('session_token');
+            
+            // Try sessionStorage
+            if (!token) {
+                token = sessionStorage.getItem('session_token');
+            }
+            
+            // Try cookies
+            if (!token) {
+                const cookies = document.cookie.split(';');
+                for (let cookie of cookies) {
+                    const [name, value] = cookie.trim().split('=');
+                    if (name === 'session_token' || name === 'school_git_token') {
+                        token = decodeURIComponent(value);
+                        break;
+                    }
+                }
+            }
+            
+            // Try URL parameters (if passed from parent)
+            if (!token) {
+                const urlParams = new URLSearchParams(window.location.search);
+                token = urlParams.get('session_token');
+            }
+            
+            // Try message from opener (if opened as popup)
+            if (!token && window.opener) {
+                try {
+                    // Request token from opener
+                    window.opener.postMessage({ 
+                        type: 'get_session_token',
+                        requestId: Date.now() 
+                    }, '*');
+                    
+                    // Set up listener for response
+                    return new Promise((resolve) => {
+                        const messageHandler = (event) => {
+                            if (event.data && event.data.type === 'session_token_response') {
+                                window.removeEventListener('message', messageHandler);
+                                resolve(event.data.token);
+                            }
+                        };
+                        window.addEventListener('message', messageHandler);
+                        
+                        // Timeout if no response
+                        setTimeout(() => resolve(null), 2000);
+                    });
+                } catch (e) {
+                    console.error('Failed to get token from opener:', e);
+                    return Promise.resolve(null);
+                }
+            }
+            
+            return Promise.resolve(token);
+        }
+
         async function processOAuthCallback() {
             try {
                 // Get URL parameters
@@ -988,28 +1047,89 @@
                 // Simulate progress
                 simulateProgress();
 
-                // Exchange code for access token
-                updateProgress(25, 'Exchanging authorization code...');
+                // Get session token
+                updateProgress(20, 'Verifying session...');
+                const sessionToken = await getSessionToken();
                 
+                if (!sessionToken) {
+                    // Try to get from parent via iframe communication
+                    if (window !== window.top) {
+                        try {
+                            // Request token from parent
+                            window.parent.postMessage({ 
+                                type: 'get_session_token_for_oauth',
+                                requestId: Date.now() 
+                            }, '*');
+                            
+                            // Wait for response
+                            const parentToken = await new Promise((resolve) => {
+                                const messageHandler = (event) => {
+                                    if (event.data && event.data.type === 'session_token_for_oauth_response') {
+                                        window.removeEventListener('message', messageHandler);
+                                        resolve(event.data.token);
+                                    }
+                                };
+                                window.addEventListener('message', messageHandler);
+                                setTimeout(() => resolve(null), 3000);
+                            });
+                            
+                            if (parentToken) {
+                                sessionToken = parentToken;
+                            }
+                        } catch (e) {
+                            console.error('Failed to get token from parent:', e);
+                        }
+                    }
+                    
+                    if (!sessionToken) {
+                        throw new Error('Session token not found. Please log in again.', 'CFU2');
+                    }
+                }
+
+                // Exchange code for access token
+                updateProgress(40, 'Exchanging authorization code...');
+                
+                const requestBody = {
+                    action: 'callback',
+                    code: code,
+                    state: state,
+                    sessionToken: sessionToken
+                };
+
                 const response = await fetch('/api/github-auth', {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json'
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
                     },
-                    body: JSON.stringify({
-                        action: 'callback',
-                        code: code,
-                        state: state
-                    })
+                    body: JSON.stringify(requestBody),
+                    credentials: 'include' // Include cookies
                 });
 
-                updateProgress(50, 'Processing response...');
+                updateProgress(60, 'Processing response...');
+
+                // Check for HTTP errors
+                if (!response.ok) {
+                    let errorData;
+                    try {
+                        errorData = await response.json();
+                    } catch (e) {
+                        errorData = { error: `HTTP ${response.status}: ${response.statusText}` };
+                    }
+                    
+                    let errorCode = 'CFU1';
+                    if (response.status === 401) errorCode = 'CFU2';
+                    if (response.status === 400 && errorData.error?.includes('state')) errorCode = 'CFU3';
+                    if (response.status === 403 && errorData.localOnly) errorCode = 'CFU7';
+                    
+                    throw new Error(errorData.error || `HTTP ${response.status}`, errorCode);
+                }
 
                 const data = await response.json();
 
-                if (!response.ok || !data.success) {
+                if (!data.success) {
                     let errorCode = 'CFU1';
-                    if (data.error?.includes('expired')) errorCode = 'CFU2';
+                    if (data.error?.includes('expired') || data.needsLogin) errorCode = 'CFU2';
                     if (data.error?.includes('state')) errorCode = 'CFU3';
                     if (data.error?.includes('rate limit')) errorCode = 'CFU6';
                     if (data.localOnly) errorCode = 'CFU7';
@@ -1018,7 +1138,7 @@
                     throw new Error(data.error || 'Failed to connect to GitHub', errorCode);
                 }
 
-                updateProgress(75, 'Getting GitHub user info...');
+                updateProgress(80, 'Getting GitHub user info...');
 
                 // Update UI with GitHub info
                 if (data.githubUsername) {
@@ -1036,14 +1156,57 @@
 
                 updateProgress(100, 'Connection complete!');
 
+                // Store the GitHub connection status
+                if (window.opener) {
+                    // If opened as popup, notify parent
+                    try {
+                        window.opener.postMessage({
+                            type: 'github_oauth_complete',
+                            success: true,
+                            githubUsername: data.githubUsername,
+                            githubAvatar: data.githubAvatar
+                        }, '*');
+                    } catch (e) {
+                        console.error('Failed to notify opener:', e);
+                    }
+                } else if (window !== window.top) {
+                    // If in iframe, notify parent
+                    try {
+                        window.parent.postMessage({
+                            type: 'github_oauth_complete',
+                            success: true,
+                            githubUsername: data.githubUsername,
+                            githubAvatar: data.githubAvatar
+                        }, '*');
+                    } catch (e) {
+                        console.error('Failed to notify parent:', e);
+                    }
+                } else {
+                    // Store in localStorage for main window
+                    localStorage.setItem('github_connected', 'true');
+                    localStorage.setItem('github_username', data.githubUsername);
+                    if (data.githubAvatar) {
+                        localStorage.setItem('github_avatar', data.githubAvatar);
+                    }
+                }
+
                 // Show success after a brief delay
                 setTimeout(() => {
                     switchState('success');
                     
-                    // Auto-redirect after 5 seconds
-                    setTimeout(() => {
-                        window.location.href = '/dashboard';
-                    }, 5000);
+                    // If opened in popup/iframe, auto-close after delay
+                    if (window.opener || window !== window.top) {
+                        setTimeout(() => {
+                            if (window.opener && !window.opener.closed) {
+                                window.close();
+                            }
+                        }, 2000);
+                    } else {
+                        // Auto-redirect main window after 5 seconds
+                        setTimeout(() => {
+                            window.location.href = '/dashboard';
+                        }, 5000);
+                    }
                 }, 800);
 
             } catch (error) {
@@ -1059,6 +1222,20 @@
                     if (error.message.includes('school')) errorCode = 'CFU7';
                     if (error.message.includes('proxy')) errorCode = 'CFU8';
                     if (error.message.includes('network')) errorCode = 'CFU9';
+                    if (error.message.includes('HTTP 5')) errorCode = 'CFU10';
+                }
+                
+                // Notify parent about error
+                if (window.opener) {
+                    try {
+                        window.opener.postMessage({
+                            type: 'github_oauth_error',
+                            error: error.message,
+                            errorCode: errorCode
+                        }, '*');
+                    } catch (e) {
+                        console.error('Failed to notify opener about error:', e);
+                    }
                 }
                 
                 showError(error.message, errorCode);
@@ -1075,20 +1252,61 @@
             }, 300);
         }
 
-        // Handle messages from parent window (if opened in popup)
+        // Handle messages from parent/opener
         window.addEventListener('message', function(event) {
+            // Only accept messages from same origin or trusted origins
+            const trustedOrigins = [
+                window.location.origin,
+                'https://school-git.vercel.app',
+                'http://localhost:3000'
+            ];
+            
+            if (!trustedOrigins.includes(event.origin)) {
+                return;
+            }
+            
             if (event.data && event.data.type === 'github_oauth_complete') {
-                window.close();
+                // If we're the opener, close the popup
+                if (window.opener && !window.opener.closed) {
+                    setTimeout(() => {
+                        window.close();
+                    }, 500);
+                }
+            }
+            
+            if (event.data && event.data.type === 'session_token_response') {
+                // Token received from opener
+                if (event.data.token && currentState === 'loading') {
+                    // Retry with new token
+                    clearInterval(progressInterval);
+                    processOAuthCallback();
+                }
+            }
+            
+            if (event.data && event.data.type === 'session_token_for_oauth_response') {
+                // Token received from parent (iframe)
+                if (event.data.token && currentState === 'loading') {
+                    // Store and continue
+                    localStorage.setItem('session_token', event.data.token);
+                    clearInterval(progressInterval);
+                    processOAuthCallback();
+                }
             }
         });
 
-        // Auto-close if opened in popup after success
-        if (window.opener && !window.opener.closed) {
-            document.getElementById('continueBtn').onclick = () => {
-                window.opener.postMessage({ type: 'github_oauth_complete' }, '*');
-                window.close();
-            };
-        }
+        // Listen for parent window requesting token (if we're in a popup)
+        window.addEventListener('message', function(event) {
+            if (event.data && event.data.type === 'get_session_token') {
+                // Send token back to requester
+                const token = localStorage.getItem('session_token') || 
+                              sessionStorage.getItem('session_token');
+                event.source.postMessage({
+                    type: 'session_token_response',
+                    token: token,
+                    requestId: event.data.requestId
+                }, event.origin);
+            }
+        });
 
         // Handle browser back/forward
         window.addEventListener('pageshow', function(event) {
@@ -1100,13 +1318,30 @@
         // Add keyboard shortcuts
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape' && currentState === 'error') {
-                window.location.href = '/login';
+                if (window.opener && !window.opener.closed) {
+                    window.close();
+                } else {
+                    window.location.href = '/login';
+                }
             }
             if (e.key === 'r' && (e.ctrlKey || e.metaKey) && currentState === 'error') {
                 e.preventDefault();
                 window.location.reload();
             }
         });
+
+        // Check if we should redirect to login for missing token
+        setTimeout(() => {
+            if (currentState === 'loading') {
+                // Check if we have token after initial load
+                getSessionToken().then(token => {
+                    if (!token && !window.location.search.includes('code=')) {
+                        // No token and no OAuth code - redirect to login
+                        window.location.href = '/login?returnTo=' + encodeURIComponent(window.location.href);
+                    }
+                });
+            }
+        }, 3000);
     </script>
 </body>
 </html>
