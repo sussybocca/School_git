@@ -9,78 +9,63 @@ const GITHUB_CLIENT_ID = process.env.GITHUB_CLIENT_ID;
 const GITHUB_CLIENT_SECRET = process.env.GITHUB_CLIENT_SECRET;
 const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY;
 
-// Proxy settings
-const PROXY_ENABLED = true; // Can be toggled by admin
-const ALLOWED_GITHUB_ENDPOINTS = [
-    'login/oauth/authorize',
-    'login/oauth/access_token', 
-    'user',
-    'user/repos',
-    'repos'
-];
-
 // GitHub Proxy Function
-async function githubProxy(endpoint, method = 'GET', body = null, accessToken = null) {
-    // Check if proxy is enabled globally
-    const { data: settings } = await supabase
-        .from('settings')
-        .select('value')
-        .eq('key', 'github_proxy_enabled')
-        .single();
-        
-    if (settings && settings.value === 'false') {
-        throw new Error('GitHub proxy is disabled by school administrator');
-    }
-    
-    // Validate endpoint is allowed
-    const isAllowed = ALLOWED_GITHUB_ENDPOINTS.some(allowed => endpoint.includes(allowed));
-    if (!isAllowed) {
-        throw new Error('This GitHub endpoint is not permitted through school proxy');
-    }
-    
-    // Build URL
-    let url;
-    if (endpoint.startsWith('http')) {
-        url = endpoint;
-    } else if (endpoint.startsWith('/')) {
-        url = `https://api.github.com${endpoint}`;
-    } else {
-        url = `https://api.github.com/${endpoint}`;
-    }
-    
-    // Headers
-    const headers = {
-        'Accept': 'application/vnd.github.v3+json',
-        'User-Agent': 'SchoolGit-Proxy/1.0',
-        'X-SchoolGit-Proxy': 'true',
-        'X-Forwarded-For': 'school-git-proxy'
-    };
-    
-    if (accessToken) {
-        headers['Authorization'] = `token ${accessToken}`;
-    }
-    
-    if (body && method !== 'GET') {
-        headers['Content-Type'] = 'application/json';
-    }
-    
-    // Make request through proxy
+async function githubProxy(endpoint, method = 'GET', body = null, accessToken = null, userId = null) {
     try {
+        // Check if proxy is enabled globally
+        const { data: settings } = await supabase
+            .from('settings')
+            .select('value')
+            .eq('key', 'github_proxy_enabled')
+            .single();
+            
+        if (settings && settings.value === 'false') {
+            throw new Error('GitHub proxy is disabled by school administrator');
+        }
+        
+        // Build URL
+        let url;
+        if (endpoint.startsWith('http')) {
+            url = endpoint;
+        } else if (endpoint.startsWith('/')) {
+            url = `https://api.github.com${endpoint}`;
+        } else {
+            url = `https://api.github.com/${endpoint}`;
+        }
+        
+        // Headers
+        const headers = {
+            'Accept': 'application/vnd.github.v3+json',
+            'User-Agent': 'SchoolGit-Proxy/1.0'
+        };
+        
+        if (accessToken) {
+            headers['Authorization'] = `token ${accessToken}`;
+        }
+        
+        if (body && method !== 'GET') {
+            headers['Content-Type'] = 'application/json';
+        }
+        
+        // Make request
         const response = await fetch(url, {
             method,
             headers,
             body: body ? JSON.stringify(body) : null
         });
         
-        // Log proxy usage for school monitoring
-        await supabase
-            .from('proxy_logs')
-            .insert([{
-                endpoint: endpoint,
-                method: method,
-                timestamp: new Date().toISOString(),
-                status: response.status
-            }]);
+        // Log proxy usage
+        if (userId) {
+            await supabase
+                .from('proxy_logs')
+                .insert([{
+                    endpoint: endpoint,
+                    method: method,
+                    user_id: userId,
+                    timestamp: new Date().toISOString(),
+                    status: response.status
+                }]);
+        }
         
         if (!response.ok) {
             const errorText = await response.text();
@@ -91,10 +76,11 @@ async function githubProxy(endpoint, method = 'GET', body = null, accessToken = 
     } catch (error) {
         console.error('GitHub proxy error:', error);
         
-        // Check if it's a network block (common in schools)
+        // Check if it's a network block
         if (error.message.includes('network') || 
             error.message.includes('fetch') || 
-            error.message.includes('ECONNREFUSED')) {
+            error.message.includes('ECONNREFUSED') ||
+            error.message.includes('Failed to fetch')) {
             throw new Error('GitHub is blocked by school network. Working in local mode.');
         }
         
@@ -152,11 +138,10 @@ module.exports = async (req, res) => {
     }
 
     try {
-        const { action, code, sessionToken, repoName, description, isPrivate, files } = req.body;
+        const { action, code, sessionToken, repoName, description, isPrivate, email, schoolDomain, enabled } = req.body;
 
         switch (action) {
             case 'initiate':
-                // Check if user is logged in
                 if (!sessionToken) {
                     return res.status(401).json({ 
                         error: 'Please log in first',
@@ -164,21 +149,22 @@ module.exports = async (req, res) => {
                     });
                 }
                 
-                const { data: user } = await supabase
+                const { data: authUser } = await supabase
                     .from('users')
                     .select('id, email, two_step_enabled')
                     .eq('phone_verification_code', sessionToken)
                     .single();
                     
-                if (!user) {
+                if (!authUser) {
                     return res.status(401).json({ error: 'Invalid session' });
                 }
                 
-                // Check if GitHub is allowed for this school
+                // Check school settings
+                const userEmailDomain = authUser.email.split('@')[1];
                 const { data: schoolSettings } = await supabase
                     .from('school_settings')
                     .select('allow_github_access')
-                    .eq('user_email', user.email)
+                    .eq('school_domain', userEmailDomain)
                     .single();
                     
                 if (schoolSettings && schoolSettings.allow_github_access === false) {
@@ -196,17 +182,15 @@ module.exports = async (req, res) => {
                 await supabase
                     .from('users')
                     .update({ two_step_enabled: state })
-                    .eq('id', user.id);
+                    .eq('id', authUser.id);
 
-                // Use proxy for GitHub OAuth URL
+                // GitHub OAuth URL
                 const callbackUrl = `https://school-git.vercel.app/auth-callback.html`;
                 const githubAuthUrl = `https://github.com/login/oauth/authorize?client_id=${GITHUB_CLIENT_ID}&scope=repo&state=${state}&redirect_uri=${encodeURIComponent(callbackUrl)}`;
                 
                 return res.status(200).json({
                     success: true,
-                    authUrl: githubAuthUrl,
-                    warning: 'Note: If GitHub is blocked, work will automatically save locally.',
-                    requiresConfirmation: true
+                    authUrl: githubAuthUrl
                 });
 
             case 'callback':
@@ -217,7 +201,7 @@ module.exports = async (req, res) => {
                 }
 
                 // Find user by state
-                let user = null;
+                let callbackUser = null;
                 const { data: stateUser } = await supabase
                     .from('users')
                     .select('id, email, two_step_enabled')
@@ -225,41 +209,52 @@ module.exports = async (req, res) => {
                     .single();
 
                 if (!stateUser) {
-                    // Try session token as fallback
                     if (sessionToken) {
                         const { data: sessionUser } = await supabase
                             .from('users')
                             .select('id, email')
                             .eq('phone_verification_code', sessionToken)
                             .single();
-                        user = sessionUser;
+                        callbackUser = sessionUser;
                     }
                     
-                    if (!user) {
+                    if (!callbackUser) {
                         return res.status(400).json({ 
                             error: 'Session expired',
                             needsLogin: true 
                         });
                     }
                 } else {
-                    user = stateUser;
+                    callbackUser = stateUser;
                 }
 
                 try {
                     // Use proxy for token exchange
-                    const tokenData = await githubProxy('login/oauth/access_token', 'POST', {
-                        client_id: GITHUB_CLIENT_ID,
-                        client_secret: GITHUB_CLIENT_SECRET,
-                        code,
-                        state: receivedState
-                    });
+                    const tokenData = await githubProxy(
+                        'login/oauth/access_token', 
+                        'POST', 
+                        {
+                            client_id: GITHUB_CLIENT_ID,
+                            client_secret: GITHUB_CLIENT_SECRET,
+                            code,
+                            state: receivedState
+                        },
+                        null,
+                        callbackUser.id
+                    );
 
                     if (tokenData.error) {
                         throw new Error(tokenData.error_description || 'GitHub OAuth error');
                     }
 
                     // Get user info through proxy
-                    const githubUser = await githubProxy('user', 'GET', null, tokenData.access_token);
+                    const githubUser = await githubProxy(
+                        'user', 
+                        'GET', 
+                        null, 
+                        tokenData.access_token,
+                        callbackUser.id
+                    );
                     
                     // Encrypt and store token
                     const encryptedToken = encrypt(tokenData.access_token);
@@ -267,7 +262,7 @@ module.exports = async (req, res) => {
                     await supabase
                         .from('loggedin_users')
                         .upsert({
-                            email: user.email,
+                            email: callbackUser.email,
                             github_id: githubUser.id.toString(),
                             github_username: githubUser.login,
                             github_avatar: githubUser.avatar_url,
@@ -281,17 +276,18 @@ module.exports = async (req, res) => {
                     await supabase
                         .from('users')
                         .update({ two_step_enabled: null })
-                        .eq('id', user.id);
+                        .eq('id', callbackUser.id);
 
                     return res.status(200).json({
                         success: true,
                         githubUsername: githubUser.login,
                         githubAvatar: githubUser.avatar_url,
-                        message: 'GitHub connected via SchoolGit proxy'
+                        message: 'GitHub connected successfully'
                     });
 
                 } catch (proxyError) {
-                    // Proxy/network error - GitHub likely blocked
+                    console.error('Proxy error:', proxyError);
+                    
                     return res.status(200).json({
                         success: false,
                         error: 'Cannot connect to GitHub',
@@ -306,7 +302,6 @@ module.exports = async (req, res) => {
                     return res.status(401).json({ error: 'Authentication required' });
                 }
 
-                // Get user
                 const { data: repoUser } = await supabase
                     .from('users')
                     .select('id, email')
@@ -317,7 +312,6 @@ module.exports = async (req, res) => {
                     return res.status(401).json({ error: 'Invalid session' });
                 }
 
-                // Check GitHub connection
                 const { data: githubConn } = await supabase
                     .from('loggedin_users')
                     .select('github_token_encrypted, github_username')
@@ -347,14 +341,12 @@ module.exports = async (req, res) => {
                 }
 
                 try {
-                    // Decrypt token
                     const decryptedToken = decrypt(githubConn.github_token_encrypted);
                     
                     if (!decryptedToken) {
                         throw new Error('Failed to decrypt GitHub token');
                     }
 
-                    // Create repo through proxy
                     const repoData = {
                         name: repoName,
                         description: description || '',
@@ -366,10 +358,10 @@ module.exports = async (req, res) => {
                         `user/repos`, 
                         'POST', 
                         repoData, 
-                        decryptedToken
+                        decryptedToken,
+                        repoUser.id
                     );
 
-                    // Store in database
                     const { data: savedRepo } = await supabase
                         .from('github_repos')
                         .insert([{
@@ -387,11 +379,12 @@ module.exports = async (req, res) => {
                         success: true,
                         repo: savedRepo,
                         githubUrl: githubRepo.html_url,
-                        message: 'Repository created on GitHub via SchoolGit proxy'
+                        message: 'Repository created on GitHub'
                     });
 
                 } catch (error) {
-                    // GitHub failed - store locally and queue for sync
+                    console.error('Create repo error:', error);
+                    
                     const { data: localRepo } = await supabase
                         .from('github_repos')
                         .insert([{
@@ -415,7 +408,6 @@ module.exports = async (req, res) => {
                 }
 
             case 'admin-toggle':
-                // School admin can toggle GitHub access
                 if (!sessionToken) {
                     return res.status(401).json({ error: 'Admin authentication required' });
                 }
@@ -430,8 +422,6 @@ module.exports = async (req, res) => {
                     return res.status(403).json({ error: 'Admin access required' });
                 }
 
-                const { enabled, schoolDomain } = req.body;
-                
                 await supabase
                     .from('school_settings')
                     .upsert({
@@ -449,18 +439,29 @@ module.exports = async (req, res) => {
                 });
 
             case 'get-status':
-                if (!sessionToken) {
-                    return res.status(400).json({ error: 'Session token required' });
+                if (!sessionToken && !email) {
+                    return res.status(400).json({ error: 'Session token or email required' });
                 }
 
-                const { data: statusUser } = await supabase
-                    .from('users')
-                    .select('email')
-                    .eq('phone_verification_code', sessionToken)
-                    .single();
+                let statusUser = null;
+                if (sessionToken) {
+                    const { data: tokenUser } = await supabase
+                        .from('users')
+                        .select('id, email')
+                        .eq('phone_verification_code', sessionToken)
+                        .single();
+                    statusUser = tokenUser;
+                } else if (email) {
+                    const { data: emailUser } = await supabase
+                        .from('users')
+                        .select('id, email')
+                        .eq('email', email)
+                        .single();
+                    statusUser = emailUser;
+                }
                     
                 if (!statusUser) {
-                    return res.status(401).json({ error: 'Invalid session' });
+                    return res.status(401).json({ error: 'User not found' });
                 }
 
                 // Check GitHub connection
@@ -471,16 +472,18 @@ module.exports = async (req, res) => {
                     .single();
 
                 // Check school settings
+                const userDomain = statusUser.email.split('@')[1];
                 const { data: schoolStatus } = await supabase
                     .from('school_settings')
                     .select('allow_github_access')
-                    .eq('user_email', statusUser.email)
+                    .eq('school_domain', userDomain)
                     .single();
 
                 return res.status(200).json({
                     success: true,
                     connected: !!userStatus?.github_username,
                     githubUsername: userStatus?.github_username || null,
+                    githubAvatar: userStatus?.github_avatar || null,
                     githubAllowed: !schoolStatus || schoolStatus.allow_github_access !== false,
                     schoolRestricted: schoolStatus?.allow_github_access === false
                 });
@@ -489,11 +492,11 @@ module.exports = async (req, res) => {
                 return res.status(400).json({ error: 'Invalid action' });
         }
     } catch (error) {
-        console.error('GitHub auth/proxy error:', error);
+        console.error('GitHub auth error:', error);
         return res.status(500).json({ 
-            error: 'Failed to process request',
-            details: error.message,
-            localFallback: true
+            success: false,
+            error: 'Internal server error',
+            details: error.message
         });
     }
 };
